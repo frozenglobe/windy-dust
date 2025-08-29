@@ -1,0 +1,54 @@
+#!/bin/bash
+
+# # --- check and cd to intended directory ---
+# dir_int=$1
+# if [ ! -d "$dir_int"]; then echo "Creating $dir_int..." && mkdir "$dir_int"; fi
+# if [ ! -f "output_view.ipynb" ]; then cp /data/jhyl3/mcfost_files/output_view.ipynb $dir_int; fi
+# cd $dir_int
+# echo "Current directory: $(pwd)"
+
+# --- check for parameter file(s) and obtain parameter file path ---
+para_count=$(ls -1 *.para | wc -l)
+if [ $para_count -eq 0 ]; then
+    echo "No .para files found in the current directory. Exiting."
+    exit 1
+elif [ $para_count -gt 1 ]; then
+    echo "Multiple .para files found. Please ensure only one is present. Exiting."
+    exit 1
+else
+    echo "Single .para file found."
+fi
+
+para_path=$(find . -maxdepth 1 -type f -name "*.para")
+
+# check if cutoff provided; if not, no argument passed
+# if [ $3 ]; then
+#     echo "Using cutoff value: $3"
+#     mcfost $para_path -disk_struct -cutoff $3
+# else
+#     mcfost $para_path -disk_struct
+
+# --- check for density fits file ---
+if [ -f "settled_density.fits" ]; then
+    echo "Density fits file found. Proceeding with mcfost."
+else
+    echo "Density fits file not found. Generating new density fits file."
+    bash /data/jhyl3/windy-dust/mcfost_files/fits_gen $(pwd) $1 $2 $3 $4 $5
+    if [ $? -ne 0 ]; then
+        echo "Error generating density fits file. Exiting."
+        exit 1
+    fi
+    echo "Proceeding with mcfost."
+fi
+
+if [ ! -d "data_th" ]; then
+    echo "Generating data_th."
+    mcfost $para_path -df settled_density.fits
+fi
+
+if [ ! -d "data_disk" ]; then
+    echo "Generating data_disk."
+    mcfost $para_path -df settled_density.fits -disk_struct
+fi
+
+exit 0

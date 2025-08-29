@@ -1,0 +1,69 @@
+#!/bin/bash
+
+# This script generates images at specified wavelengths using mcfost. Feed wavelengths as arguments.
+# The script checks for the existence of data_th and the dust properties file. 
+# If a density fits file is found, it uses that; otw generates according to parameter file.
+
+# --- cd to correct directory. first argument reserved for pwd ---
+# if [ -f "pipeline" ]; then
+#     echo "Running from pipeline directory."
+#     cd $1
+# else
+#     echo "No pipeline file found. Exiting."
+#     exit 1
+# fi
+
+# --- check for data_th directory and dust properties file ---
+if [ ! -d "data_th" ]; then
+    echo "data_th directory not found. Exiting."
+    exit 1
+elif [ ! -f "_dust_prop_th.tmp" ]; then
+    echo "Dust properties file not found. Exiting."
+    exit 1
+else
+    echo "data_th directory and dust properties file exist."
+fi
+
+# --- obtain parameter file ---
+para_path=$(find . -maxdepth 1 -type f -name "*.para")
+
+# --- obtain wavelengths from arguments ---
+wavelengths=( "$@" )
+
+# --- checks for existence of density fits file ---
+fits_count=$(ls -1 *.fits | wc -l)
+
+# --- checks for existence of image directories ---
+check_existence() {
+    if [ -d "data_$1" ]; then
+        return 0
+    else
+        return 1
+    fi
+}
+
+# --- main block ---
+if [ $fits_count -eq 0 ]; then
+    echo "No density fits file found. Proceeding with mcfost..."
+    for arg in "${wavelengths[@]}"; do
+
+        if check_existence $arg; then echo "data_$arg already exists. Skipping."; continue; fi
+
+        echo "Generating $arg um..."
+        mcfost $para_path -img $arg
+        echo "Done"
+    done
+else
+    fits_path=$(find . -maxdepth 1 -type f -name "*.fits")
+    echo "Density fits file found. Proceeding with mcfost..."
+
+    for arg in "${wavelengths[@]}"; do
+
+        if check_existence $arg; then echo "data_$arg already exists. Skipping."; continue; fi
+        echo "Generating $arg um..."
+        mcfost $para_path -df $fits_path -img $arg
+        echo "Done"
+    done
+fi
+
+exit 0
