@@ -32,6 +32,7 @@ para_path=$(find . -maxdepth 1 -type f -name "*.para")
 if [ -f "settled_density.fits" ]; then
     echo "Density fits file found. Proceeding with mcfost."
 else
+# fields are: surface mass loss rate (g cm-2 s-1) at reference radius; reference radius; power law index; global minimum stalling grain size; IF inclination (rad)
     echo "Density fits file not found. Generating new density fits file."
     bash /data/jhyl3/windy-dust/mcfost_files/fits_gen $(pwd) $1 $2 $3 $4 $5
     if [ $? -ne 0 ]; then
