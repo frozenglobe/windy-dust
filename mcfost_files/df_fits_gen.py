@@ -25,6 +25,31 @@ print('IF inclination:', if_incl, 'rad')
 # finds the parameter file in the current directory
 para_path = [s for s in os.listdir(path) if '.para' in s][0] # provided there is only one parameter file. but there is a test before this in the bash script
 
+# quantities obtained directly from the parameter file#
+with open(para_path, 'r') as f: para_lines = f.readlines(); f.close()
+
+grain_line_no = [i for i, s in enumerate(para_lines) if 'amax' in s][0] # to target grain size
+grain_list = para_lines[grain_line_no].split()
+amin, amax = grain_list[:2]
+aexp = float(grain_list[2])
+
+R_in = float([s for s in para_lines if 'Rin, edge' in s][0].split()[0]) # inner radius in au
+r_c = float([s for s in para_lines if 'Rc (AU)' in s][0].split()[3]) # in au
+N = int([s for s in para_lines if 'n_rad (log distribution)' in s][0].split()[1]) # number of vertical cells
+H_100 = float([s for s in para_lines if 'scale height, r' in s][0].split()[0]) # scale height at 100 au in au
+beta = float([s for s in para_lines if 'flaring exponent' in s][0].split()[0])
+q = 3 - 2*beta
+
+H_max = 7 # maximum scale height THIS NEEDS FIXING
+
+dust_disc_mass, g2d = [float(a) for a in [s for s in para_lines if 'gas-to-dust' in s][0].split()[:2]]
+rhos = 3.5 # in g/cm3
+v2m = 4*np.pi/3 * rhos # in g/cm3
+p1, p2 = [int(a) for a in [s for s in para_lines if 'surface density exponent' in s][0].split()[:2]]
+p = -p1
+
+stellar_mass = float([s for s in para_lines if 'M (solar mass)' in s][0].split()[2]) # in solar masses
+
 # generate spatial and grain size grid from parameter file
 grid = fits.open(path+'/data_disk_original/grid.fits.gz')
 grain_sizes = fits.open(path+'/data_disk_original/grain_sizes.fits.gz')
@@ -38,8 +63,6 @@ gas_density = fits.open(path+'/data_disk_original/gas_density.fits.gz')
 
 R = grid[0].data[0,0,0] # radial grid
 P = len(R) # number of radial cells
-N = len(grid[0].data[1,0,:,0]) # number of vertical cells
-H_max = 7 # maximum scale height THIS NEEDS FIXING
 
 amin = grain_sizes_min[0].data[0] / 1e4 # min grain size, in cm
 amax = grain_sizes_max[0].data[-1] / 1e4 # max grain size, in cm
@@ -47,23 +70,6 @@ a = grain_sizes[0].data / 1e4 # list of grain sizes in cm
 
 # --- #
 
-# --- quantities obtained directly from the parameter file --- #
-
-with open(para_path, 'r') as f: para_lines = f.readlines(); f.close()
-
-aexp = float([s for s in para_lines if 'amax' in s][0].split()[2])
-dust_disc_mass, g2d = [float(a) for a in [s for s in para_lines if 'gas-to-dust' in s][0].split()[:2]]
-H_100 = float([s for s in para_lines if 'scale height, r' in s][0].split()[0]) # scale height at 100 au in au
-rhos = 3.5 # in g/cm3
-v2m = 4*np.pi/3 * rhos # in g/cm3
-p1, p2 = [int(a) for a in [s for s in para_lines if 'surface density exponent' in s][0].split()[:2]]
-p = -p1
-beta = float([s for s in para_lines if 'flaring exponent' in s][0].split()[0])
-q = 3 - 2*beta
-r_c = float([s for s in para_lines if 'Rc (AU)' in s][0].split()[3]) # in au
-stellar_mass = float([s for s in para_lines if 'M (solar mass)' in s][0].split()[2]) # in solar masses
-
-# --- #
 
 # --- calculate other parameters and quantities --- #
 Omega = (np.sqrt(sc.G * stellar_mass * 2e30) * 1.5e11**(-1.5)) * R**(-1.5) # Keplerian angular frequency in s^-1

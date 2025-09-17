@@ -5,6 +5,18 @@ cd $1
 
 para_path=$(find . -maxdepth 1 -type f -name "*.para")
 
+# --- check for existing _run_param.txt file ---
+if [ -f "_run_param.txt" ]; then
+    echo 'Using existing run parameters file.'
+else
+    echo 'Creating new run parameters file.'
+    # --- input surface mass loss rate and stalling grain size ---
+    echo -e "pwd: $1\nsmlr: $2 $3 $4 \na_stl: $5\nincl: $6" >_run_param.txt
+fi
+
+# --- use parameter file to calculate correct grain size resolution
+python /data/jhyl3/windy-dust/mcfost_files/gs_resolution.py
+
 # --- generating data disk file. if exists, then replaces ---
 mcfost $para_path -disk_struct
 if [ -d data_disk_original ]; then rm -r data_disk_original; fi
@@ -18,17 +30,7 @@ else
     echo 'Generating new density fits file.'
 fi
 
-# --- check for existing _run_param.txt file ---
-if [ -f "_run_param.txt" ]; then
-    echo 'Using existing run parameters file.'
-else
-    echo 'Creating new run parameters file.'
-    # --- input surface mass loss rate and stalling grain size ---
-    echo -e "pwd: $1\nsmlr: $2 $3 $4 \na_stl: $5\nincl: $6" >_run_param.txt
-fi
-
 python /data/jhyl3/windy-dust/mcfost_files/df_fits_gen.py
-# rm _run_param.txt
 
 # check if density fits file was created
 if [ ! -f "settled_density.fits" ]; then

@@ -31,7 +31,7 @@ para_path=$(find . -maxdepth 1 -type f -name "*.para")
 wavelengths=( "$@" )
 
 # --- checks for existence of density fits file ---
-fits_count=$(ls -1 *.fits | wc -l)
+fits_count=$(ls -1 settled_density.fits | wc -l)
 
 # --- checks for existence of image directories ---
 check_existence() {
@@ -54,7 +54,7 @@ if [ $fits_count -eq 0 ]; then
         echo "Done"
     done
 else
-    fits_path=$(find . -maxdepth 1 -type f -name "*.fits")
+    fits_path=$(find . -maxdepth 1 -type f -name "settled_density.fits")
     echo "Density fits file found. Proceeding with mcfost..."
 
     for arg in "${wavelengths[@]}"; do
