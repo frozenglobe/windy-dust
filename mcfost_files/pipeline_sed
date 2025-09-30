@@ -21,12 +21,27 @@ fi
 
 para_path=$(find . -maxdepth 1 -type f -name "*.para")
 
-# check if cutoff provided; if not, no argument passed
-# if [ $3 ]; then
-#     echo "Using cutoff value: $3"
-#     mcfost $para_path -disk_struct -cutoff $3
-# else
-#     mcfost $para_path -disk_struct
+# --- generate _run_param.txt file ---
+echo 'Creating new run parameters file.'
+echo -e "pwd: $(pwd)\nsmlr: $1 $2 $3 \na_stl: $4\nincl: $5" >_run_param.txt
+
+# --- use parameter file to calculate correct grain size resolution ---
+# --- and simultaneously generate PSFs ---
+python /data/jhyl3/windy-dust/mcfost_files/gs_resolution.py &
+process_id=$!
+echo "PID: $process_id"
+if [ -d "psf_fits" ]; then
+    echo "psf_fits directory already exists. Skipping psf generation."
+else
+    echo "Generating psf_fits directory."
+    python /data/jhyl3/windy-dust/mcfost_files/psf_pregen.py &
+    psf_process_id=$!
+    echo "PSF PID: $psf_process_id"
+fi
+
+wait $process_id
+echo "Grain size resolution calculation completed."
+# sleep 20
 
 # --- check for density fits file ---
 if [ -f "settled_density.fits" ]; then
@@ -42,14 +57,25 @@ else
     echo "Proceeding with mcfost."
 fi
 
+if [ ! -d "data_disk" ]; then
+    echo "Generating data_disk."
+    mcfost $para_path -df settled_density.fits -disk_struct &
+fi
+
 if [ ! -d "data_th" ]; then
     echo "Generating data_th."
     mcfost $para_path -df settled_density.fits
 fi
 
-if [ ! -d "data_disk" ]; then
-    echo "Generating data_disk."
-    mcfost $para_path -df settled_density.fits -disk_struct
-fi
 
+wait
 exit 0
+
+# unused code
+
+# check if cutoff provided; if not, no argument passed
+# if [ $3 ]; then
+#     echo "Using cutoff value: $3"
+#     mcfost $para_path -disk_struct -cutoff $3
+# else
+#     mcfost $para_path -disk_struct

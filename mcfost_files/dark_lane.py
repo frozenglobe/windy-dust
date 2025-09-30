@@ -64,27 +64,6 @@ z = (grid[0].data[1,0] / np.tile(H, (N,1))).T[0]
 if np.isnan(if_incl): z_IF = np.full((P,), 1e30) # effectively infinite height if no inclination is provided
 else: z_IF = R/H * np.tan(if_incl)
 
-# loading image files
-# splits each directory string and returns those where the 2nd entry is a float
-idx = np.nonzero([isFloat(t.split('_')[1]) for t in data_list])[0]
-img_paths = np.array(data_list)[idx] # currently unsorted
-
-# now sort by increasing wavelength
-wl_list = [float(s.split('_')[1]) for s in img_paths]
-sort_idx = np.array(wl_list).argsort()
-img_paths = img_paths[sort_idx]
-
-# load all images and plot first image
-img_list = [mcfost.Image(s) for s in img_paths]
-img_list[0].plot()
-
-# extract image properties 
-lim_pos, lim_neg = img_list[0].extent[:2]
-pixelscale = img_list[0].pixelscale
-ct_px = (np.array([img_list[0].nx, img_list[0].ny])/2).astype(int) # central pixel idxs
-# ... and place into dictionary
-img_param = {'lim_pos': lim_pos, 'lim_neg': lim_neg, 'pixelscale': pixelscale, 'ct_px': ct_px}
-
 # --- #
 
 # --- load data from Duchene et al. (2024) --- #
@@ -93,7 +72,6 @@ wavelength_dlc, dlt_data, sett10_model = np.load('/data/jhyl3/windy-dust/mcfost_
 br_data = np.load('/data/jhyl3/windy-dust/mcfost_files/br_data.npy')[1]
 
 # --- #
-
 
 # --- generate mass density, SED and temperature plots --- #
 
@@ -145,12 +123,58 @@ plt.savefig('model_structure.png', dpi=300, bbox_inches='tight')
 # --- #
 
 
+# --- LOAD IMAGE FILES --- #
+
+# splits each directory string and returns those where the 2nd entry is a float
+idx = np.nonzero([isFloat(t.split('_')[1]) for t in data_list])[0]
+img_paths = np.array(data_list)[idx] # currently unsorted
+
+# now sort by increasing wavelength
+wl_list = [float(s.split('_')[1]) for s in img_paths]
+sort_idx = np.array(wl_list).argsort()
+img_paths = img_paths[sort_idx]
+
+# load all images and plot first image
+img_list = [mcfost.Image(s) for s in img_paths]
+img_list[0].plot()
+
+# extract image properties 
+lim_pos, lim_neg = img_list[0].extent[:2]
+pixelscale = img_list[0].pixelscale
+ct_px = (np.array([img_list[0].nx, img_list[0].ny])/2).astype(int) # central pixel idxs
+# ... and place into dictionary
+img_param = {'lim_pos': lim_pos, 'lim_neg': lim_neg, 'pixelscale': pixelscale, 'ct_px': ct_px}
+
+# --- #
+
+
 # --- POINT SPREAD FUNCTION GENERATION --- #
+
+# nrc = stpsf.NIRCam()
+# nrc.pixelscale = pixelscale
+# miri = stpsf.MIRI()
+# miri.pixelscale = pixelscale
+
+# nrc_list = ['F200W', 'F444W']
+# miri_list = ['F770W', 'F1280W', 'F2100W']
+
+# psf_hdus = []
+
+# for s in nrc_list:
+#     nrc.filter = s
+#     psf_hdus.append(nrc.calc_psf(oversample=4))
+
+# for s in miri_list:
+#     miri.filter = s
+#     psf_hdus.append(miri.calc_psf(oversample=4))
+
+
+# --- old --- #
 
 # PSF generation is slow, so please load pre-generated PSFs
 # choose a directory.
 
-psf_dir = '/data/jhyl3/windy-dust/mcfost_files/psf_fits'
+psf_dir = 'psf_fits'
 
 wl_list = [float(s.split('_')[1]) for s in img_paths]
 
@@ -160,6 +184,8 @@ psf_hdus = [fits.open(os.path.join(psf_dir, s)) for s in os.listdir(psf_dir)]
 # need to sort by wavelength
 sort_key = [int(s.split('F')[1].split('W')[0]) for s in os.listdir(psf_dir)]
 psf_hdus = [s for _, s in sorted(zip(sort_key, psf_hdus))]
+
+# --- #
 
 # extract kernels for each JWST filter. 3 uses the third ImageHDU, named `DET_DIST' which is
 # their best guess for the PSF actually observed on a real detector, including real-world effects
