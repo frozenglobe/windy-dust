@@ -11,6 +11,7 @@ import pandas as pd
 import stpsf
 import copy
 from matplotlib.patches import Ellipse, Circle
+import argparse
 
 # Rundown of program:
 # 1. identifies valid image directories
@@ -174,7 +175,11 @@ img_param = {'lim_pos': lim_pos, 'lim_neg': lim_neg, 'pixelscale': pixelscale, '
 # PSF generation is slow, so please load pre-generated PSFs
 # choose a directory.
 
-psf_dir = 'psf_fits'
+parser = argparse.ArgumentParser(description="PSF directory")
+parser.add_argument("psf_dir", type=str)
+args = parser.parse_args()
+
+psf_dir = args.psf_dir
 
 wl_list = [float(s.split('_')[1]) for s in img_paths]
 
