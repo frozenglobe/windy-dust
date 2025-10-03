@@ -29,7 +29,7 @@ para_path=$(find . -maxdepth 1 -type f -name "*.para")
 
 # --- obtain wavelengths from arguments ---
 wavelengths=( "$@" )
-echo "${wavelengths[@]}"
+echo "Wavelengths: ${wavelengths[@]}"
 
 # --- checks for existence of density fits file ---
 fits_count=$(ls -1 settled_density.fits | wc -l)
@@ -66,12 +66,11 @@ else
 
         if check_existence $arg; then echo "data_$arg already exists. Skipping."; continue; fi
         echo "Generating $arg um..."
-        echo "$arg"
-        mcfost $para_path -df $fits_path -img $arg &
-        process_id=$!
-        echo "PID: $process_id"
+        mcfost $para_path -df $fits_path -img $arg >/dev/null &
+        # process_id=$!
+        # echo "PID: $process_id"
         sleep 2
-        echo "Exit status: $?"
+        # echo "Exit status: $?"
 
     done
     wait

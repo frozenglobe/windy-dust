@@ -1,0 +1,28 @@
+#!/bin/bash
+
+eval "$(conda shell.bash hook)"
+conda activate pyspedas
+
+# --- use parameter file to calculate correct grain size resolution ---
+# --- and simultaneously generate PSFs ---
+python /data/jhyl3/windy-dust/mcfost_files/gs_resolution.py &
+process_id=$!
+
+if [ -d "psf_fits" ]; then
+    echo "psf_fits directory already exists. Skipping psf generation."
+else
+    echo "Generating psf_fits directory."
+    python /data/jhyl3/windy-dust/mcfost_files/psf_pregen.py &
+    psf_process_id=$!
+    echo "PSF PID: $psf_process_id"
+fi
+
+wait $process_id
+echo "Grain size resolution calculation completed."
+
+bash ../sed_gen $1 $2 $3 $4 $5
+bash ../image_gen 0.8 2.0 4.4 7.7 12.8 21.0
+python ../dark_lane.py psf_fits
+
+
+exit 0

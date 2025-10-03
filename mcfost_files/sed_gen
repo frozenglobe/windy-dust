@@ -1,0 +1,51 @@
+#!/bin/bash
+
+# This script generates the density fits file and runs MCFOST
+# for SED and data_disk
+
+# --- generate _run_param.txt file ---
+echo 'Creating new run parameters file.'
+echo -e "pwd: $(pwd)\nsmlr: $1 $2 $3 \na_stl: $4\nincl: $5" >_run_param.txt
+
+# --- check for density fits file ---
+if [ -f "settled_density.fits" ]; then
+    echo "Density fits file found. Proceeding with mcfost."
+else
+# fields are: surface mass loss rate (g cm-2 s-1) at reference radius; reference radius; power law index; global minimum stalling grain size; IF inclination (rad)
+    echo "Density fits file not found. Generating new density fits file."
+    bash /data/jhyl3/windy-dust/mcfost_files/fits_gen $(pwd) $1 $2 $3 $4 $5
+    if [ $? -ne 0 ]; then
+        echo "Error generating density fits file. Exiting."
+        exit 1
+    fi
+    echo "Proceeding with mcfost."
+fi
+
+# --- check for parameter file(s) and obtain parameter file path ---
+para_count=$(ls -1 *.para | wc -l)
+if [ $para_count -eq 0 ]; then
+    echo "No .para files found in the current directory. Exiting."
+    exit 1
+elif [ $para_count -gt 1 ]; then
+    echo "Multiple .para files found. Please ensure only one is present. Exiting."
+    exit 1
+else
+    echo "Single .para file found."
+fi
+
+para_path=$(find . -maxdepth 1 -type f -name "*.para")
+
+
+if [ ! -d "data_disk" ]; then
+    echo "Generating data_disk."
+    mcfost $para_path -df settled_density.fits -disk_struct >/dev/null &
+fi
+
+if [ ! -d "data_th" ]; then
+    echo "Generating data_th."
+    mcfost $para_path -df settled_density.fits >/dev/null
+    echo "data_th written."
+fi
+
+wait
+exit 0

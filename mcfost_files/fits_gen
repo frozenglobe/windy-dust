@@ -16,7 +16,7 @@ para_path=$(find . -maxdepth 1 -type f -name "*.para")
 
 
 # --- generating data disk file. if exists, then replaces ---
-mcfost $para_path -disk_struct
+mcfost $para_path -disk_struct >/dev/null
 if [ -d data_disk_original ]; then rm -r data_disk_original; fi
 mv data_disk data_disk_original
 

@@ -1,0 +1,61 @@
+#!/bin/bash
+
+eval "$(conda shell.bash hook)"
+conda activate pyspedas
+
+# suppose the same parameter file is used for all runs, i.e. the parameter
+# that is being changed is not in the parameter file (e.g. sigma_dot, a_stl)
+# so only _run_param.txt needs to be changed
+
+param_values=( "$@" )
+
+# calculate grain size resolution and update parameter file
+python /data/jhyl3/windy-dust/mcfost_files/gs_resolution.py
+
+# preemptively generate PSFs
+
+# j tracks whether psf generation has started
+j=0
+if [ ! -d "psf_fits" ]; then
+    j=1
+    python /data/jhyl3/windy-dust/mcfost_files/psf_pregen.py &
+    psf_process_id=$!
+    echo "PSF PID: $psf_process_id"
+else
+    echo "psf_fits directory already exists. Skipping PSF generation."
+fi
+
+i=1 # initialise counter
+for arg in "${param_values[@]}"; do
+
+    echo "$i, $arg" >> param_space.csv
+    mkdir "param_$i" && cd "param_$i"
+
+    cp ../ref4.1.para ./
+    bash ../../sed_gen 2e-12 10 -1.5 ${arg} NaN &
+    cd ..
+    ((i++))
+    sleep 2
+
+done
+
+if [ $j -eq 1 ]; then
+    echo "Waiting for PSF generation to complete..."
+    wait $psf_process_id
+    echo "PSF generation completed."
+fi
+
+
+i=1 # reset counter
+for arg in "${param_values[@]}"; do
+    cd "param_$i"
+    bash ../../image_gen 0.8 2.0 4.4 7.7 12.8 21.0 && python ../../dark_lane.py ../psf_fits &
+    rm -r data_disk_original settled_density.fits old_para.bak # saving space
+    cd ../
+    ((i++))
+    sleep 2
+done
+
+
+wait
+exit 0

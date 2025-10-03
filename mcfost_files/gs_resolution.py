@@ -2,10 +2,10 @@ import numpy as np
 import os
 
 
-with open('_run_param.txt', 'r') as f: run_param_lines = f.readlines(); f.close()
-path = [s for s in run_param_lines if 'pwd' in s][0].split()[1]
+# with open('_run_param.txt', 'r') as f: run_param_lines = f.readlines(); f.close()
+# path = [s for s in run_param_lines if 'pwd' in s][0].split()[1]
 
-para_path = [s for s in os.listdir(path) if '.para' in s][0] # provided there is only one parameter file. but there is a test before this in the bash script
+para_path = [s for s in os.listdir() if '.para' in s][0] # provided there is only one parameter file. but there is a test before this in the bash script
 
 with open(para_path, 'r') as f: para_lines = f.readlines(); f.close()
 
