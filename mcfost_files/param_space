@@ -13,6 +13,17 @@ pwr=(-1.5) # power law index
 gs=(5e-5) # global minimum stalling grain size in cm
 incl=(NaN) # inclination in radians
 
+Help()
+{
+    echo "Usage: $0 -s <smlr1,smlr2,...> -p <pwr1,pwr2,...> -g <gs1,gs2,...> -i <incl1,incl2,...>"
+    echo "  -s <smlr>   Comma-separated list of surface mass loss rates (in g/cm2/s) at 10 au"
+    echo "  -p <pwr>    Comma-separated list of power law indices"
+    echo "  -g <gs>     Comma-separated list of global minimum stalling grain sizes (in cm)"
+    echo "  -i <incl>   Comma-separated list of inclinations (in radians)"
+    echo "Example: $0 -s 2e-12,2e-11 -p -1.5,-1.0 -g 5e-5 -i NaN"
+    exit 0
+}
+
 while getopts ":hs:p:g:i:" option; do
     case $option in 
         h) 
