@@ -11,6 +11,7 @@ param_values=( "$@" )
 
 # calculate grain size resolution and update parameter file
 python /data/jhyl3/windy-dust/mcfost_files/gs_resolution.py
+rm old_para.bak # remove clutter
 
 # preemptively generate PSFs
 
@@ -25,12 +26,15 @@ else
     echo "psf_fits directory already exists. Skipping PSF generation."
 fi
 
-i=1 # initialise counter
+# initialise counter: finds how many param_* directories already exist
+i=$(find . -maxdepth 1 -type d -name "param_*" | wc -l)
+((i++))
+k=$i # counter for image_gen later
+
 for arg in "${param_values[@]}"; do
 
     echo "$i, $arg" >> param_space.csv
     mkdir "param_$i" && cd "param_$i"
-
     cp ../ref4.1.para ./
     bash ../../sed_gen 2e-12 10 -1.5 ${arg} NaN &
     cd ..
@@ -45,17 +49,18 @@ if [ $j -eq 1 ]; then
     echo "PSF generation completed."
 fi
 
+wait
+echo "All data_th jobs complete."
 
-i=1 # reset counter
+
 for arg in "${param_values[@]}"; do
-    cd "param_$i"
+    cd "param_$k"
     bash ../../image_gen 0.8 2.0 4.4 7.7 12.8 21.0 && python ../../dark_lane.py ../psf_fits &
-    rm -r data_disk_original settled_density.fits old_para.bak # saving space
     cd ../
-    ((i++))
+    ((k++))
     sleep 2
 done
 
-
 wait
-exit 0
+
+rm -r ./param_*/data_disk_original ./param_*/settled_density.fits # clean up

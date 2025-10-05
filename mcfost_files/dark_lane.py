@@ -285,6 +285,9 @@ def dlcalc(im, fit_lim, window, img_param, plot=False):
 br_list = [dlcalc(s, fit_lim=0.6, window=10, img_param=img_param)['br_ratio'] for s in conv_img_list]
 dlt_list = [dlcalc(s, fit_lim=0.6, window=10, img_param=img_param)['dlt'] for s in conv_img_list]
 
+# brdlt_out = np.vstack((br_list, dlt_list)).T
+# np.savetxt('brdlt_out.csv', brdlt_out, delimiter=',', header='brightness_ratio,dark_lane_thickness')
+
 # --- calculate model SED ---
 sed_model_wl = sed[1].data
 sed_list = np.interp(wl_list, sed_model_wl, sed[0].data[0,0,-1])

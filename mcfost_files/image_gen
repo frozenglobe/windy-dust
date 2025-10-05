@@ -49,12 +49,10 @@ if [ $fits_count -eq 0 ]; then
     for arg in "${wavelengths[@]}"; do
 
         if check_existence $arg; then echo "data_$arg already exists. Skipping."; continue; fi
-
         echo "Generating $arg um..."
-        # mcfost $para_path -img $arg &
-        # (mcfost $para_path -img $arg; echo "Done")
+        mcfost $para_path -img $arg >/dev/null &
         sleep 2
-        echo "Done"
+    
     done
     wait
     echo "All jobs completed."

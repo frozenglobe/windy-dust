@@ -4,8 +4,10 @@
 # for SED and data_disk
 
 # --- generate _run_param.txt file ---
-echo 'Creating new run parameters file.'
-echo -e "pwd: $(pwd)\nsmlr: $1 $2 $3 \na_stl: $4\nincl: $5" >_run_param.txt
+if [ ! -f "_run_param.txt" ]; then
+    echo 'Creating new run parameters file.'
+    echo -e "pwd: $(pwd)\nsmlr: $1 $2 $3 \na_stl: $4\nincl: $5" >_run_param.txt
+fi
 
 # --- check for density fits file ---
 if [ -f "settled_density.fits" ]; then
@@ -48,4 +50,5 @@ if [ ! -d "data_th" ]; then
 fi
 
 wait
+
 exit 0
