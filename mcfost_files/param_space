@@ -7,7 +7,41 @@ conda activate pyspedas
 # that is being changed is not in the parameter file (e.g. sigma_dot, a_stl)
 # so only _run_param.txt needs to be changed
 
-param_values=( "$@" )
+# defaults
+smlr=(2e-12) # surface mass loss rate at 10 au in g/cm2/s
+pwr=(-1.5) # power law index
+gs=(5e-5) # global minimum stalling grain size in cm
+incl=(NaN) # inclination in radians
+
+while getopts ":hs:p:g:i:" option; do
+    case $option in 
+        h) 
+            Help
+            exit;;
+        s) # SMLR at 10 au in g/cm2/s
+            IFS=','
+            smlr=($OPTARG);;
+
+        p) # SMLR power law index
+            IFS=','
+            pwr=($OPTARG);;
+
+        g) # global minimum stalling grain size in cm
+            IFS=','
+            gs=($OPTARG);;
+
+        i) # inclination in radians
+            IFS=','
+            incl=($OPTARG);;
+
+        \?)
+            echo "Error: Invalid option"
+            exit;;
+    esac
+done
+
+
+
 
 # calculate grain size resolution and update parameter file
 python /data/jhyl3/windy-dust/mcfost_files/gs_resolution.py
@@ -31,16 +65,22 @@ i=$(find . -maxdepth 1 -type d -name "param_*" | wc -l)
 ((i++))
 k=$i # counter for image_gen later
 
-for arg in "${param_values[@]}"; do
+echo "Run, SMLR, PLI, a_stl, incl" > param_space.csv
 
-    echo "$i, $arg" >> param_space.csv
-    mkdir "param_$i" && cd "param_$i"
-    cp ../ref4.1.para ./
-    bash ../../sed_gen 2e-12 10 -1.5 ${arg} NaN &
-    cd ..
-    ((i++))
-    sleep 2
-
+for smlr_arg in "${smlr[@]}"; do
+    for pwr_arg in "${pwr[@]}"; do
+        for gs_arg in "${gs[@]}"; do
+            for incl_arg in "${incl[@]}"; do
+                echo "$i, $smlr_arg, $pwr_arg, $gs_arg, $incl_arg" >> param_space.csv
+                mkdir "param_$i" && cd "param_$i"
+                cp ../ref4.1.para ./
+                bash ../../sed_gen ${smlr_arg} 10 ${pwr_arg} ${gs_arg} ${incl_arg} &
+                cd ..
+                ((i++))
+                sleep 2
+            done
+        done
+    done
 done
 
 if [ $j -eq 1 ]; then
@@ -53,11 +93,10 @@ wait
 echo "All data_th jobs complete."
 
 
-for arg in "${param_values[@]}"; do
-    cd "param_$k"
+for ((n=$k;n<$i;n++)); do
+    cd "param_$n"
     bash ../../image_gen 0.8 2.0 4.4 7.7 12.8 21.0 && python ../../dark_lane.py ../psf_fits &
     cd ../
-    ((k++))
     sleep 2
 done
 
